@@ -15,6 +15,7 @@
 package topologyaware
 
 import (
+	"fmt"
 	"math"
 	"sort"
 
@@ -24,6 +25,40 @@ import (
 	system "github.com/containers/nri-plugins/pkg/sysfs"
 	idset "github.com/intel/goresctrl/pkg/utils"
 )
+
+func BUILD() error {
+	log.EnableDebug(true)
+	p := policy{}
+
+	sys, err := system.DiscoverSystem()
+	if err != nil {
+		panic(fmt.Sprintf("failed to discover system topology: %v", err))
+	}
+
+	p.sys = sys
+
+	err = p.buildPoolsByTopology()
+	if err != nil {
+		panic(err)
+	}
+
+	zones := p.GetTopologyZones()
+
+	for _, zone := range zones {
+		fmt.Println("Zone name", zone.Name)
+		fmt.Println("Zone parent", zone.Parent)
+		for _, resource := range zone.Resources {
+			fmt.Println("Resource Name", resource.Name)
+			fmt.Println("Resource Capacity", resource.Capacity)
+			fmt.Println("Resource", resource.Available)
+			fmt.Println()
+		}
+		fmt.Println()
+		fmt.Println()
+	}
+
+	return nil
+}
 
 // buildPoolsByTopology builds a hierarchical tree of pools based on HW topology.
 func (p *policy) buildPoolsByTopology() error {
